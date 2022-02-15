@@ -17,7 +17,7 @@ gsutil mb gs://${PROJECT_ID}-bucket_name
 gsutil versioning set on gs://${PROJECT_ID}-bucket_name
 ```
 
-## Adding Privileges to cloudbuild service account
+## Adding privileges to cloudbuild service account
 
 ```
 CLOUDBUILD_SA="$(gcloud projects describe $PROJECT_ID \
@@ -32,6 +32,8 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member serviceAccount:$CLOUDBUILD_SA --role roles/iam.serviceAccountAdmin
 ```
+
+## Updating terraform scripts with gcp project ID
 
 ```
 cd ~/terraform-gcp
