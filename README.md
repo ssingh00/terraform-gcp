@@ -1,4 +1,11 @@
 # Terraform Tips
+This repository is for answering some of the common terraform questions on gcp infrastructure management using cloud build, github and terraform.
+ - How to loop through list of item creation?
+ - How to write conditional expression?
+ - How to concatenate variables?
+ - How to create resources like cloud storage buckets, pub/sub topics, service accounts and big query dataset?
+Please follow along.
+
 
 ## Configuring **dev**
 ```bash
