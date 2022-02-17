@@ -6,7 +6,7 @@ location = "us"
 
 region  = "us"
 
-env = "dev"
+env = "prod"
 
 dataset_id = ["dataset_bq"]
 service_account = "service-account"
