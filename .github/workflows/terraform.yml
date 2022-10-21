@@ -1,0 +1,81 @@
+name: 'Terraform'
+
+on: push
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    runs-on: ubuntu-latest
+    env:
+      ENV_PATH: environments/dev
+      ENV_STATE_PATH: gs://PROJECT_ID-bucket_name
+
+    # Use the Bash shell
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Show Environment
+        run: |
+         echo "$ENV_VARIABLE"
+         echo ${{ github.ref}}
+         echo ${{ github.event_name}}
+         
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v0'
+        with:
+          workload_identity_provider: 'projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/providers/PROVIDER_ID'
+          service_account: 'SA@PROJECT_ID.iam.gserviceaccount.com'
+          token_format: 'access_token'
+
+      - name: 'Setup Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0'
+
+      - name: 'Setup Terraform Backend'
+        run: |
+          echo "Check the Backend State bucket"
+          exists=$(gsutil ls -d | grep -w "$ENV_STATE_PATH")
+          if [ -n "$exists" ]; then
+              echo -e "Bucket exists, lets not recreate it"
+          else
+              echo -e "Creating new GCS Bucket"
+              gsutil mb "$ENV_STATE_PATH"
+          fi
+
+      # Install the latest version of Terraform CLI
+      # configure the Terraform CLI configuration file with a Terraform Cloud user API token
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2.0.2
+
+      # Initialize a new or existing Terraform working directory by creating initial files,
+      # loading any remote state, downloading modules, etc.
+      - name: Terraform Init
+        run: terraform -chdir="$ENV_PATH" init
+
+      - name: Terraform Validate
+        run: terraform -chdir="$ENV_PATH" validate -no-color
+
+      # Checks that all Terraform configuration files adhere to a canonical format
+      - name: Terraform Format
+        run: terraform -chdir="$ENV_PATH" fmt -check
+
+      # Generates an execution plan for Terraform
+      - name: Terraform Plan
+        run: terraform -chdir="$ENV_PATH" plan -input=false
+
+      # On push to "main", build or change infrastructure according to Terraform configuration files
+      - name: Terraform Apply
+        if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+        run: terraform -chdir="$ENV_PATH" apply -auto-approve -input=false
